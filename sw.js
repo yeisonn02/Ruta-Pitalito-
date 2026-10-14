@@ -1,6 +1,6 @@
 /* Service worker: guarda los archivos de la app para abrirla sin internet.
    Al cambiar cualquier archivo, sube el número de VERSION_CACHE. */
-var VERSION_CACHE = 'mi-ruta-etapa-3-v1';
+var VERSION_CACHE = 'mi-ruta-etapa-3-v2';
 var ARCHIVOS = [
   './',
   'index.html',
@@ -23,8 +23,11 @@ self.addEventListener('install', function (e) {
   e.waitUntil(
     caches.open(VERSION_CACHE)
       .then(function (c) {
-        return c.addAll(ARCHIVOS).then(function () {
-          return Promise.all(ICONOS.map(function (u) { return c.add(u).catch(function () {}); }));
+        /* cache: 'reload' = pedir al servidor, NO usar la copia temporal del navegador
+           (GitHub Pages guarda 10 min y así quedaban archivos viejos). */
+        var nuevos = function (u) { return new Request(u, { cache: 'reload' }); };
+        return c.addAll(ARCHIVOS.map(nuevos)).then(function () {
+          return Promise.all(ICONOS.map(function (u) { return c.add(nuevos(u)).catch(function () {}); }));
         });
       })
       .then(function () { return self.skipWaiting(); })

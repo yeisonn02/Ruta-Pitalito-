@@ -85,7 +85,19 @@
   actualizarRed();
 
   /* Service worker (modo sin conexión de la app, NO de los mapas) */
+  function avisoActualizacion() {
+    if (document.querySelector('.actualizar')) return;
+    var d = document.createElement('div');
+    d.className = 'actualizar';
+    d.innerHTML = '<span>Hay una versión nueva.</span><button type="button">Actualizar ahora</button>';
+    d.querySelector('button').addEventListener('click', function () { location.reload(); });
+    document.body.appendChild(d);
+  }
   if ('serviceWorker' in navigator) {
+    var teniaControlador = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
+      if (teniaControlador) avisoActualizacion();   /* no avisar en la primera instalación */
+    });
     window.addEventListener('load', function () {
       navigator.serviceWorker.register('sw.js').catch(function (e) {
         console.error('No se pudo registrar el service worker:', e);
