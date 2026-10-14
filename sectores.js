@@ -7,6 +7,8 @@
   function clave(v) { return normalizar(v).trim().replace(/\s+/g, ' '); }
   function tok(k) { return k === '' ? '~' : encodeURIComponent(k).replace(/~/g, '%7E').replace(/\*/g, '%2A'); }
   function des(t) { return t === '~' ? '' : decodeURIComponent(t); }
+  function ptok(v) { return v === '' ? '~' : encodeURIComponent(v).replace(/~/g, '%7E'); }
+  function val(g) { return !g || g.key === '' ? '' : g.label; }
   function etiquetaSin(campo) { return 'Sin ' + campo; }
 
   function agrupar(lista, campo) {
@@ -86,7 +88,10 @@
       if (!enS.length) return vacio(ctx, '#/sectores/' + tok(m) + '/' + tok(v));
       Clientes.setOrigen(location.hash);
       enS.sort(function (a, b) { return a.tienda.localeCompare(b.tienda, 'es'); });
+      var gs = todosS ? null : agrupar(enS, 'sector')[0];
+      var nuevoAqui = '#/clientes/nuevo/' + ptok(val(gm)) + '/' + ptok(val(gv)) + '/' + ptok(val(gs));
       ctx.contenedor.innerHTML = migas([gm.label, gv.label].concat(todosS ? [] : [titulo])) +
+        '<a class="boton grande" href="' + nuevoAqui + '">+ Nuevo cliente aquí</a>' +
         '<p class="conteo">' + plural(enS.length) + '</p>' + enS.map(Clientes.tarjeta).join('');
     }).catch(function (e) {
       ctx.contenedor.innerHTML = '<div class="error" role="alert"><strong>No se pudo completar</strong>' + esc(e.message) + '</div>';

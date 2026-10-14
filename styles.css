@@ -10,6 +10,7 @@
   --ambar-fondo: #FFF4D1;
   --radio: 14px;
 }
+[hidden] { display: none !important; }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html { -webkit-text-size-adjust: 100%; }
 body {
@@ -128,5 +129,13 @@ textarea.campo { resize: vertical; }
   font: inherit; font-weight: 700; color: var(--tinta); background: var(--ambar);
   border: 0; border-radius: 10px; padding: 10px 14px; min-height: 44px;
 }
+
+.gps { margin-top: 20px; padding: 14px; background: var(--superficie); border: 2px solid var(--linea); border-radius: var(--radio); }
+.gps-estado { margin: 4px 0 4px; font-size: 16px; min-height: 1.4em; overflow-wrap: anywhere; }
+.gps-estado.con-error { background: #FDECEA; border-left: 6px solid #B3261E; border-radius: 8px; padding: 10px 12px; color: #5C130F; }
+.nota { color: var(--tinta-suave); font-size: 15px; margin: 12px 2px 0; }
+.explica { margin: 0 0 4px; }
+button.tarjeta { width: 100%; text-align: left; font: inherit; cursor: pointer; }
+button.tarjeta strong { display: block; }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }

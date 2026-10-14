@@ -1,14 +1,16 @@
 /* Service worker: guarda los archivos de la app para abrirla sin internet.
    Al cambiar cualquier archivo, sube el número de VERSION_CACHE. */
-var VERSION_CACHE = 'mi-ruta-etapa-3-v2';
+var VERSION_CACHE = 'mi-ruta-etapa-4-v1';
 var ARCHIVOS = [
   './',
   'index.html',
   'styles.css',
   'app.js',
   'db.js',
+  'gps.js',
   'clientes.js',
   'sectores.js',
+  'ubicacion.js',
   'manifest.webmanifest'
 ];
 /* Iconos: si alguno falta, la app igual se instala y funciona sin internet. */
