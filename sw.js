@@ -1,6 +1,6 @@
 /* Service worker: guarda los archivos de la app para abrirla sin internet.
    Al cambiar cualquier archivo, sube el número de VERSION_CACHE. */
-var VERSION_CACHE = 'mi-ruta-etapa-2-v1';
+var VERSION_CACHE = 'mi-ruta-etapa-2-v3';
 var ARCHIVOS = [
   './',
   'index.html',
@@ -8,17 +8,24 @@ var ARCHIVOS = [
   'app.js',
   'db.js',
   'clientes.js',
-  'manifest.webmanifest',
-  'icons/icon-192.png',
-  'icons/icon-512.png',
-  'icons/icon-maskable-512.png',
-  'icons/apple-touch-icon.png'
+  'manifest.webmanifest'
+];
+/* Iconos: si alguno falta, la app igual se instala y funciona sin internet. */
+var ICONOS = [
+  'apple-touch-icon.png',
+  'icon-192.png',
+  'icon-512.png',
+  'icon-maskable-512.png'
 ];
 
 self.addEventListener('install', function (e) {
   e.waitUntil(
     caches.open(VERSION_CACHE)
-      .then(function (c) { return c.addAll(ARCHIVOS); })
+      .then(function (c) {
+        return c.addAll(ARCHIVOS).then(function () {
+          return Promise.all(ICONOS.map(function (u) { return c.add(u).catch(function () {}); }));
+        });
+      })
       .then(function () { return self.skipWaiting(); })
   );
 });
