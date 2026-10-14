@@ -1,53 +1,77 @@
-/* Mi Ruta - Etapa 1: esqueleto de navegación + PWA.
-   Aún no hay base de datos: las pantallas son marcadores de posición. */
+/* Mi Ruta - Etapa 2: navegación + clientes guardados en IndexedDB. */
 (function () {
   'use strict';
 
-  var VERSION_APP = 'etapa-1';
+  var VERSION_APP = 'etapa-2';
+  var estadoAlmacenamiento = 'sin comprobar';
 
-  var pantallas = {
-    '': {
-      titulo: 'Mi Ruta',
-      atras: false,
-      html: function () {
-        return '' +
-          '<div class="aviso"><strong>Respaldo</strong>' +
-          'Cuando guardes clientes, exporta una copia de seguridad con frecuencia. ' +
-          'Los datos viven solo en este teléfono.</div>' +
-          '<nav class="menu" aria-label="Menú principal">' +
-            '<a class="boton-menu" href="#/sectores">Sectores<small>Municipio, vereda, sector</small></a>' +
-            '<a class="boton-menu" href="#/clientes">Clientes<small>Buscar y editar</small></a>' +
-            '<a class="boton-menu" href="#/ruta">Mi ruta<small>Visitas pendientes</small></a>' +
-            '<a class="boton-menu principal" href="#/ubicacion">Guardar ubicación<small>GPS actual</small></a>' +
-          '</nav>' +
-          '<p class="version" style="color:#4A5A50;font-size:14px;margin-top:20px">Versión: ' + VERSION_APP + '</p>';
-      }
-    },
-    'sectores':  { titulo: 'Sectores',          atras: true, etapa: 3, texto: 'Aquí verás tus clientes agrupados por municipio, vereda y sector.' },
-    'clientes':  { titulo: 'Clientes',          atras: true, etapa: 2, texto: 'Aquí podrás crear, buscar, editar y eliminar clientes.' },
-    'ruta':      { titulo: 'Mi ruta',           atras: true, etapa: 5, texto: 'Aquí armarás tu lista de visitas y marcarás cada una.' },
-    'ubicacion': { titulo: 'Guardar ubicación', atras: true, etapa: 4, texto: 'Aquí guardarás tu ubicación GPS actual.' }
+  var pendientes = {
+    sectores:  { titulo: 'Sectores',          etapa: 3, texto: 'Aquí verás tus clientes agrupados por municipio, vereda y sector.' },
+    ruta:      { titulo: 'Mi ruta',           etapa: 5, texto: 'Aquí armarás tu lista de visitas y marcarás cada una.' },
+    ubicacion: { titulo: 'Guardar ubicación', etapa: 4, texto: 'Aquí guardarás tu ubicación GPS actual.' }
   };
 
-  function pantallaPendiente(p) {
-    return '<div class="vacio"><h2>Todavía no disponible</h2>' +
+  var contenedor = document.getElementById('pantalla');
+  var ctx = {
+    contenedor: contenedor,
+    cabecera: function (titulo, atras) {
+      document.getElementById('titulo').textContent = titulo;
+      var b = document.getElementById('btn-atras');
+      b.hidden = !atras;
+      b.dataset.destino = atras || '';
+      document.title = titulo === 'Mi Ruta' ? 'Mi Ruta' : titulo + ' · Mi Ruta';
+    }
+  };
+
+  function inicio() {
+    ctx.cabecera('Mi Ruta', null);
+    contenedor.innerHTML =
+      '<div class="aviso"><strong>Respaldo</strong>' +
+      'Exporta una copia de seguridad con frecuencia. Los datos viven solo en este teléfono ' +
+      '(la función de respaldo llega en la Etapa 6).</div>' +
+      '<nav class="menu" aria-label="Menú principal">' +
+        '<a class="boton-menu" href="#/sectores">Sectores<small>Municipio, vereda, sector</small></a>' +
+        '<a class="boton-menu" href="#/clientes">Clientes<small>Buscar y editar</small></a>' +
+        '<a class="boton-menu" href="#/ruta">Mi ruta<small>Visitas pendientes</small></a>' +
+        '<a class="boton-menu principal" href="#/ubicacion">Guardar ubicación<small>GPS actual</small></a>' +
+      '</nav>' +
+      '<p class="version">Versión: ' + VERSION_APP + '<br>Almacenamiento protegido: ' + estadoAlmacenamiento + '</p>';
+  }
+
+  function pendiente(p) {
+    ctx.cabecera(p.titulo, '#/');
+    contenedor.innerHTML = '<div class="vacio"><h2>Todavía no disponible</h2>' +
       p.texto + '<br>Se construye en la Etapa ' + p.etapa + '.</div>';
   }
 
   function dibujar() {
-    var clave = (location.hash || '').replace(/^#\/?/, '');
-    var p = pantallas[clave] || pantallas[''];
-    document.getElementById('titulo').textContent = p.titulo;
-    document.getElementById('btn-atras').hidden = !p.atras;
-    document.getElementById('pantalla').innerHTML = p.html ? p.html() : pantallaPendiente(p);
-    document.title = p.titulo === 'Mi Ruta' ? 'Mi Ruta' : p.titulo + ' · Mi Ruta';
+    var partes = (location.hash || '').replace(/^#\/?/, '').split('/').filter(Boolean);
+    var raiz = partes[0] || '';
+    if (raiz === 'clientes') Clientes.render(partes, ctx);
+    else if (pendientes[raiz]) pendiente(pendientes[raiz]);
+    else inicio();
     window.scrollTo(0, 0);
   }
 
   document.getElementById('btn-atras').addEventListener('click', function () {
-    location.hash = '#/';
+    location.hash = this.dataset.destino || '#/';
   });
   window.addEventListener('hashchange', dibujar);
+
+  /* Pide al navegador que NO borre los datos por falta de uso (iOS puede negarlo). */
+  function protegerAlmacenamiento() {
+    if (!(navigator.storage && navigator.storage.persist)) { estadoAlmacenamiento = 'no disponible'; return Promise.resolve(); }
+    return navigator.storage.persisted().then(function (ya) {
+      if (ya) return true;
+      return navigator.storage.persist();
+    }).then(function (ok) { estadoAlmacenamiento = ok ? 'sí' : 'no confirmado (haz respaldos)'; })
+      .catch(function () { estadoAlmacenamiento = 'no disponible'; });
+  }
+
+  DB.abrir().catch(function (e) {
+    contenedor.innerHTML = '<div class="error" role="alert"><strong>No se pudo abrir la base de datos</strong>' + e.message + '</div>';
+  });
+  protegerAlmacenamiento().then(function () { if (!location.hash || location.hash === '#/') dibujar(); });
   dibujar();
 
   /* Aviso de conexión */
