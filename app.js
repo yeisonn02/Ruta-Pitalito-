@@ -1,12 +1,11 @@
-/* Mi Ruta - Etapa 2: navegación + clientes guardados en IndexedDB. */
+/* Mi Ruta - Etapa 3: clientes + sectores. */
 (function () {
   'use strict';
 
-  var VERSION_APP = 'etapa-2';
+  var VERSION_APP = 'etapa-3';
   var estadoAlmacenamiento = 'sin comprobar';
 
   var pendientes = {
-    sectores:  { titulo: 'Sectores',          etapa: 3, texto: 'Aquí verás tus clientes agrupados por municipio, vereda y sector.' },
     ruta:      { titulo: 'Mi ruta',           etapa: 5, texto: 'Aquí armarás tu lista de visitas y marcarás cada una.' },
     ubicacion: { titulo: 'Guardar ubicación', etapa: 4, texto: 'Aquí guardarás tu ubicación GPS actual.' }
   };
@@ -48,6 +47,7 @@
     var partes = (location.hash || '').replace(/^#\/?/, '').split('/').filter(Boolean);
     var raiz = partes[0] || '';
     if (raiz === 'clientes') Clientes.render(partes, ctx);
+    else if (raiz === 'sectores') Sectores.render(partes, ctx);
     else if (pendientes[raiz]) pendiente(pendientes[raiz]);
     else inicio();
     window.scrollTo(0, 0);

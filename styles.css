@@ -116,4 +116,6 @@ textarea.campo { resize: vertical; }
 .error strong { display: block; }
 .error[hidden] { display: none; }
 
+.migas { color: var(--tinta-suave); font-size: 15px; margin: 0 2px 4px; overflow-wrap: anywhere; }
+
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }

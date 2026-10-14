@@ -10,6 +10,11 @@
   function normalizar(t) {
     return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   }
+  var origen = '#/clientes';   /* a dónde vuelve "Volver" desde la ficha */
+  function tarjeta(c) {
+    return '<a class="tarjeta" href="#/clientes/' + c.id + '"><strong>' + esc(c.tienda) + '</strong>' +
+      '<span>' + esc(ubicacionTexto(c) || 'Sin ubicación') + '</span></a>';
+  }
   function ubicacionTexto(c) {
     return [c.sector, c.vereda, c.municipio].filter(Boolean).join(' · ');
   }
@@ -20,6 +25,7 @@
   /* ---------- Lista ---------- */
   function lista(ctx) {
     ctx.cabecera('Clientes', '#/');
+    origen = '#/clientes';
     ctx.contenedor.innerHTML = '<p class="cargando">Cargando…</p>';
     return DB.listarClientes().then(function (todos) {
       todos.sort(function (a, b) { return a.tienda.localeCompare(b.tienda, 'es'); });
@@ -47,10 +53,7 @@
           return;
         }
         conteo.textContent = visibles.length + (visibles.length === 1 ? ' cliente' : ' clientes') + (q ? ' encontrados' : '');
-        res.innerHTML = visibles.length ? visibles.map(function (c) {
-          return '<a class="tarjeta" href="#/clientes/' + c.id + '"><strong>' + esc(c.tienda) + '</strong>' +
-            '<span>' + esc(ubicacionTexto(c) || 'Sin ubicación') + '</span></a>';
-        }).join('') : '<div class="vacio"><h2>Sin resultados</h2>Prueba con otra palabra.</div>';
+        res.innerHTML = visibles.length ? visibles.map(tarjeta).join('') : '<div class="vacio"><h2>Sin resultados</h2>Prueba con otra palabra.</div>';
       }
       if (caja) caja.addEventListener('input', pintar);
       pintar();
@@ -130,7 +133,7 @@
       '<span class="fila-valor">' + (valor ? esc(valor) : '<em>—</em>') + '</span></div>';
   }
   function ficha(ctx, id) {
-    ctx.cabecera('Cliente', '#/clientes');
+    ctx.cabecera('Cliente', origen);
     ctx.contenedor.innerHTML = '<p class="cargando">Cargando…</p>';
     return DB.obtenerCliente(id).then(function (c) {
       if (!c) { ctx.contenedor.innerHTML = error('Ese cliente ya no existe.'); return; }
@@ -154,6 +157,8 @@
   }
 
   window.Clientes = {
+    esc: esc, normalizar: normalizar, tarjeta: tarjeta,
+    setOrigen: function (h) { origen = h; },
     render: function (partes, ctx) {
       if (partes.length === 1) return lista(ctx);
       if (partes[1] === 'nuevo') return formulario(ctx, null);
