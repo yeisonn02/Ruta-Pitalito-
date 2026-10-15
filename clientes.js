@@ -194,11 +194,17 @@
   function ficha(ctx, id) {
     ctx.cabecera('Cliente', origen);
     ctx.contenedor.innerHTML = '<p class="cargando">Cargando…</p>';
-    return DB.obtenerCliente(id).then(function (c) {
+    return Promise.all([DB.obtenerCliente(id), DB.entradaDeCliente(id)]).then(function (r) {
+      var c = r[0], entrada = r[1];
       if (!c) { ctx.contenedor.innerHTML = error('Ese cliente ya no existe.'); return; }
+      var estados = { pendiente: 'Pendiente', visitado: 'Visitado', no_atendido: 'No atendido' };
+      var ruta = entrada
+        ? '<a class="boton secundario" href="#/ruta">En mi ruta (' + estados[entrada.estado] + ') · ver ruta</a>'
+        : '<button class="boton" type="button" id="a-ruta">+ Agregar a mi ruta</button>';
       var mapas = Gps.tiene(c)
         ? '<a class="boton grande" href="' + Gps.enlaceApple(c) + '" target="_blank" rel="noopener">Cómo llegar (Apple Maps)</a>' +
           '<a class="boton secundario" href="' + Gps.enlaceGoogle(c) + '" target="_blank" rel="noopener">Cómo llegar (Google Maps)</a>' +
+          '<a class="boton secundario" href="' + Gps.enlaceWaze(c) + '" target="_blank" rel="noopener">Cómo llegar (Waze)</a>' +
           '<button class="boton secundario" type="button" id="copiar">Copiar coordenadas</button>' +
           '<p class="nota">Los mapas necesitan internet para mostrarse.</p>'
         : '<p class="nota">Este cliente no tiene ubicación GPS. Edítalo para guardarla.</p>';
@@ -209,10 +215,17 @@
         fila('Municipio', c.municipio) + fila('Vereda', c.vereda) + fila('Sector', c.sector) +
         fila('Contacto', c.contacto) + fila('Teléfono', c.telefono) +
         fila('Cómo llegar', c.referencias) + fila('Observaciones', c.observaciones) +
+        fila('Última visita', c.ultimaVisita ? estados[c.ultimaVisita.estado] + ' · ' + Gps.fechaCorta(c.ultimaVisita.fecha) : null) +
         fila('Coordenadas GPS', Gps.tiene(c) ? Gps.coordenadas(c) + '\nPrecisión ±' + c.precision + ' m · ' + Gps.fechaCorta(c.fechaGps) : null) +
-        '</div>' + mapas + tel +
+        '</div>' + ruta + mapas + tel +
         '<a class="boton grande" href="#/clientes/' + c.id + '/editar">Editar</a>' +
         '<button class="boton peligro" type="button" id="eliminar">Eliminar cliente</button>';
+      var bRuta = document.getElementById('a-ruta');
+      if (bRuta) bRuta.addEventListener('click', function () {
+        bRuta.disabled = true;
+        DB.agregarARuta([c.id]).then(function () { return ficha(ctx, id); })
+          .catch(function (e) { bRuta.disabled = false; ctx.contenedor.insertAdjacentHTML('afterbegin', error(e.message)); });
+      });
       var bCopiar = document.getElementById('copiar');
       if (bCopiar) bCopiar.addEventListener('click', function () {
         var texto = Gps.coordenadas(c);

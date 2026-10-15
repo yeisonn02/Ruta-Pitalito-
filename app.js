@@ -1,13 +1,9 @@
-/* Mi Ruta - Etapa 4: clientes + sectores + GPS. */
+/* Mi Ruta - Etapa 5: clientes + sectores + GPS + ruta de visitas. */
 (function () {
   'use strict';
 
-  var VERSION_APP = 'etapa-4';
+  var VERSION_APP = 'etapa-5';
   var estadoAlmacenamiento = 'sin comprobar';
-
-  var pendientes = {
-    ruta:      { titulo: 'Mi ruta',           etapa: 5, texto: 'Aquí armarás tu lista de visitas y marcarás cada una.' }
-  };
 
   var contenedor = document.getElementById('pantalla');
   var ctx = {
@@ -30,16 +26,15 @@
       '<nav class="menu" aria-label="Menú principal">' +
         '<a class="boton-menu" href="#/sectores">Sectores<small>Municipio, vereda, sector</small></a>' +
         '<a class="boton-menu" href="#/clientes">Clientes<small>Buscar y editar</small></a>' +
-        '<a class="boton-menu" href="#/ruta">Mi ruta<small>Visitas pendientes</small></a>' +
+        '<a class="boton-menu" href="#/ruta">Mi ruta<small id="sub-ruta">Visitas pendientes</small></a>' +
         '<a class="boton-menu principal" href="#/ubicacion">Guardar ubicación<small>GPS actual</small></a>' +
       '</nav>' +
       '<p class="version">Versión: ' + VERSION_APP + '<br>Almacenamiento protegido: ' + estadoAlmacenamiento + '</p>';
-  }
-
-  function pendiente(p) {
-    ctx.cabecera(p.titulo, '#/');
-    contenedor.innerHTML = '<div class="vacio"><h2>Todavía no disponible</h2>' +
-      p.texto + '<br>Se construye en la Etapa ' + p.etapa + '.</div>';
+    DB.listarRuta().then(function (l) {
+      var n = l.filter(function (e) { return e.estado === 'pendiente'; }).length;
+      var el = document.getElementById('sub-ruta');
+      if (el && n) el.textContent = n + (n === 1 ? ' visita pendiente' : ' visitas pendientes');
+    }).catch(function () {});
   }
 
   function dibujar() {
@@ -48,7 +43,7 @@
     if (raiz === 'clientes') Clientes.render(partes, ctx);
     else if (raiz === 'sectores') Sectores.render(partes, ctx);
     else if (raiz === 'ubicacion') Ubicacion.render(ctx);
-    else if (pendientes[raiz]) pendiente(pendientes[raiz]);
+    else if (raiz === 'ruta') Ruta.render(partes, ctx);
     else inicio();
     window.scrollTo(0, 0);
   }

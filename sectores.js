@@ -92,7 +92,17 @@
       var nuevoAqui = '#/clientes/nuevo/' + ptok(val(gm)) + '/' + ptok(val(gv)) + '/' + ptok(val(gs));
       ctx.contenedor.innerHTML = migas([gm.label, gv.label].concat(todosS ? [] : [titulo])) +
         '<a class="boton grande" href="' + nuevoAqui + '">+ Nuevo cliente aquí</a>' +
+        '<button class="boton" type="button" id="a-ruta-sector">Agregar estos ' + enS.length + ' a mi ruta</button><div id="msg-ruta"></div>' +
         '<p class="conteo">' + plural(enS.length) + '</p>' + enS.map(Clientes.tarjeta).join('');
+      document.getElementById('a-ruta-sector').addEventListener('click', function () {
+        var b = this; b.disabled = true;
+        DB.agregarARuta(enS.map(function (c) { return c.id; })).then(function (r) {
+          document.getElementById('msg-ruta').innerHTML = '<p class="aviso" role="status" style="margin-top:12px"><strong>Listo</strong>' +
+            r.agregados + (r.agregados === 1 ? ' cliente agregado' : ' clientes agregados') + (r.yaEstaban ? ' (' + r.yaEstaban + ' ya estaban en la ruta)' : '') +
+            '. <a href="#/ruta">Ver mi ruta</a></p>';
+          b.disabled = false;
+        }).catch(function (e) { b.disabled = false; document.getElementById('msg-ruta').innerHTML = '<div class="error" role="alert">' + esc(e.message) + '</div>'; });
+      });
     }).catch(function (e) {
       ctx.contenedor.innerHTML = '<div class="error" role="alert"><strong>No se pudo completar</strong>' + esc(e.message) + '</div>';
     });

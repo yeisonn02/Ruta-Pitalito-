@@ -74,8 +74,10 @@
   function enlaceApple(c) { return 'https://maps.apple.com/?daddr=' + Number(c.lat).toFixed(6) + ',' + Number(c.lng).toFixed(6) + '&dirflg=d'; }
   function enlaceGoogle(c) { return 'https://www.google.com/maps/dir/?api=1&destination=' + Number(c.lat).toFixed(6) + ',' + Number(c.lng).toFixed(6); }
 
+  function enlaceWaze(c) { return 'https://waze.com/ul?ll=' + Number(c.lat).toFixed(6) + ',' + Number(c.lng).toFixed(6) + '&navigate=yes'; }
+
   window.Gps = {
     medir: medir, calidad: calidad, coordenadas: coordenadas, tiene: tiene,
-    fechaCorta: fechaCorta, enlaceApple: enlaceApple, enlaceGoogle: enlaceGoogle
+    fechaCorta: fechaCorta, enlaceApple: enlaceApple, enlaceGoogle: enlaceGoogle, enlaceWaze: enlaceWaze
   };
 })();
