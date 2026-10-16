@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var NOMBRE = 'mi-ruta';
-  var VERSION = 2;
+  var VERSION = 3;
   var abierta = null;
 
   function abrir() {
@@ -21,6 +21,9 @@
         if (e.oldVersion < 2) {   /* Etapa 5: lista de visitas (Mi ruta) */
           var v = db.createObjectStore('visitas', { keyPath: 'id', autoIncrement: true });
           v.createIndex('clienteId', 'clienteId', { unique: true });
+        }
+        if (e.oldVersion < 3) {   /* Etapa 6: datos internos (fecha del último respaldo y del último cambio) */
+          db.createObjectStore('meta', { keyPath: 'clave' });
         }
       };
       req.onsuccess = function () {
@@ -43,11 +46,19 @@
         var resultado;
         var req = fn(tx.objectStore(store));
         if (req) req.onsuccess = function () { resultado = req.result; };
-        tx.oncomplete = function () { resolve(resultado); };
+        tx.oncomplete = function () { resolve(resultado); if (modo === 'readwrite' && store !== 'meta') marcarCambio(); };
         tx.onerror = function () { reject(tx.error || new Error('Error al guardar.')); };
         tx.onabort = function () { reject(tx.error || new Error('Operación cancelada.')); };
       });
     });
+  }
+
+  /* Anota cuándo fue el último cambio de datos (para avisar si hay cambios sin respaldar). */
+  function marcarCambio() {
+    abrir().then(function (db) {
+      var tx = db.transaction('meta', 'readwrite');
+      tx.objectStore('meta').put({ clave: 'ultimoCambio', valor: new Date().toISOString() });
+    }).catch(function () {});
   }
 
   /* Transacción sobre varios stores. trabajo(tx, fijarResultado) usa solo peticiones IndexedDB. */
@@ -55,7 +66,7 @@
     return abrir().then(function (db) {
       return new Promise(function (resolve, reject) {
         var tx = db.transaction(stores, modo), resultado;
-        tx.oncomplete = function () { resolve(resultado); };
+        tx.oncomplete = function () { resolve(resultado); if (modo === 'readwrite' && stores.indexOf('meta') === -1) marcarCambio(); };
         tx.onerror = function () { reject(tx.error || new Error('Error al guardar.')); };
         tx.onabort = function () { reject(tx.error || new Error('Operación cancelada.')); };
         trabajo(tx, function (v) { resultado = v; });
@@ -83,6 +94,35 @@
         rq.onsuccess = function () {
           rq.result.forEach(function (e) { if (e.clienteId === id) sv.delete(e.id); });
         };
+      });
+    },
+
+    /* ---------- Respaldo ---------- */
+    obtenerMeta: function (clave) {
+      return transaccion('meta', 'readonly', function (s) { return s.get(clave); }).then(function (r) { return r ? r.valor : null; });
+    },
+    guardarMeta: function (clave, valor) {
+      return transaccion('meta', 'readwrite', function (s) { return s.put({ clave: clave, valor: valor }); });
+    },
+    /* Lee clientes y visitas en UNA sola transacción (foto consistente). */
+    exportarTodo: function () {
+      return enTransaccion(['clientes', 'visitas'], 'readonly', function (tx, fijar) {
+        var r = { clientes: [], visitas: [] };
+        fijar(r);
+        var c = tx.objectStore('clientes').getAll(), v = tx.objectStore('visitas').getAll();
+        c.onsuccess = function () { r.clientes = c.result; };
+        v.onsuccess = function () { r.visitas = v.result; };
+      });
+    },
+    /* Reemplaza TODO por el respaldo, de forma atómica: si algo falla, no se cambia nada. */
+    restaurarTodo: function (clientes, visitas, fechaRespaldoIso) {
+      return enTransaccion(['clientes', 'visitas', 'meta'], 'readwrite', function (tx) {
+        var sc = tx.objectStore('clientes'), sv = tx.objectStore('visitas'), sm = tx.objectStore('meta');
+        sc.clear(); sv.clear();
+        clientes.forEach(function (c) { sc.put(c); });
+        visitas.forEach(function (v) { sv.put(v); });
+        sm.put({ clave: 'ultimoRespaldo', valor: fechaRespaldoIso });
+        sm.put({ clave: 'ultimoCambio', valor: fechaRespaldoIso });
       });
     },
 

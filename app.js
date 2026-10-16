@@ -1,8 +1,9 @@
-/* Mi Ruta - Etapa 5: clientes + sectores + GPS + ruta de visitas. */
+/* Mi Ruta - Etapa 6: clientes + sectores + GPS + ruta + respaldo. */
 (function () {
   'use strict';
 
-  var VERSION_APP = 'etapa-5';
+  var VERSION_APP = 'etapa-6';
+  window.VERSION_APP = VERSION_APP;
   var estadoAlmacenamiento = 'sin comprobar';
 
   var contenedor = document.getElementById('pantalla');
@@ -20,16 +21,19 @@
   function inicio() {
     ctx.cabecera('Mi Ruta', null);
     contenedor.innerHTML =
-      '<div class="aviso"><strong>Respaldo</strong>' +
-      'Exporta una copia de seguridad con frecuencia. Los datos viven solo en este teléfono ' +
-      '(la función de respaldo llega en la Etapa 6).</div>' +
+      '<div id="estado-resp-inicio"></div>' +
       '<nav class="menu" aria-label="Menú principal">' +
         '<a class="boton-menu" href="#/sectores">Sectores<small>Municipio, vereda, sector</small></a>' +
         '<a class="boton-menu" href="#/clientes">Clientes<small>Buscar y editar</small></a>' +
         '<a class="boton-menu" href="#/ruta">Mi ruta<small id="sub-ruta">Visitas pendientes</small></a>' +
         '<a class="boton-menu principal" href="#/ubicacion">Guardar ubicación<small>GPS actual</small></a>' +
+        '<a class="boton-menu ancho" href="#/respaldo">Respaldo<small>Exportar y restaurar copias de seguridad</small></a>' +
       '</nav>' +
       '<p class="version">Versión: ' + VERSION_APP + '<br>Almacenamiento protegido: ' + estadoAlmacenamiento + '</p>';
+    Respaldo.estado().then(function (e) {
+      var caja = document.getElementById('estado-resp-inicio');
+      if (caja) caja.innerHTML = Respaldo.bloqueEstado(e, 'a', '#/respaldo');
+    }).catch(function () {});
     DB.listarRuta().then(function (l) {
       var n = l.filter(function (e) { return e.estado === 'pendiente'; }).length;
       var el = document.getElementById('sub-ruta');
@@ -44,6 +48,7 @@
     else if (raiz === 'sectores') Sectores.render(partes, ctx);
     else if (raiz === 'ubicacion') Ubicacion.render(ctx);
     else if (raiz === 'ruta') Ruta.render(partes, ctx);
+    else if (raiz === 'respaldo') Respaldo.render(ctx);
     else inicio();
     window.scrollTo(0, 0);
   }
