@@ -1,8 +1,8 @@
-/* Mi Ruta - Etapa 6 (azul): clientes + sectores + GPS + ruta + respaldo. */
+/* Mi Ruta - Etapa 6.2: clientes + sectores + GPS + ruta + respaldo. */
 (function () {
   'use strict';
 
-  var VERSION_APP = 'etapa-6-azul';
+  var VERSION_APP = 'etapa-6.2-correo';
   window.VERSION_APP = VERSION_APP;
   var estadoAlmacenamiento = 'sin comprobar';
 

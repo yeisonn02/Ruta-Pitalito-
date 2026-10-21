@@ -43,6 +43,10 @@
           if (typeof v !== 'string' || v.length > 5000) falla('Cliente #' + n + ': el campo "' + k + '" no es válido.');
           l[k] = v;
         });
+        if (c.correo != null) {   /* campo opcional agregado después: los respaldos viejos no lo traen */
+          if (typeof c.correo !== 'string' || c.correo.length > 5000) falla('Cliente #' + n + ': el campo "correo" no es válido.');
+          if (c.correo) l.correo = c.correo;
+        }
         var tieneLat = c.lat != null, tieneLng = c.lng != null;
         if (tieneLat !== tieneLng) falla('Cliente #' + n + ': coordenadas incompletas.');
         if (tieneLat) {

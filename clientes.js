@@ -45,7 +45,7 @@
         var q = normalizar(caja ? caja.value : '').trim();
         var visibles = todos.filter(function (c) {
           if (!q) return true;
-          var pajar = normalizar([c.tienda, c.contacto, c.telefono, c.municipio, c.vereda, c.sector, c.referencias, c.observaciones].join(' '));
+          var pajar = normalizar([c.tienda, c.contacto, c.telefono, c.correo, c.municipio, c.vereda, c.sector, c.referencias, c.observaciones].join(' '));
           return q.split(/\s+/).every(function (p) { return pajar.indexOf(p) !== -1; });
         });
         if (!todos.length) {
@@ -109,6 +109,7 @@
         campoTexto('sector', 'Sector', c.sector, { lista: 'l-sec' }) +
         campoTexto('contacto', 'Nombre del contacto (opcional)', c.contacto) +
         campoTexto('telefono', 'Teléfono (opcional)', c.telefono, { tipo: 'tel', modo: 'tel' }) +
+        campoTexto('correo', 'Correo electrónico (opcional)', c.correo, { tipo: 'email', modo: 'email' }) +
         '<label class="etiqueta" for="referencias">Dirección o referencias para llegar</label>' +
         '<textarea class="campo" id="referencias" rows="3">' + esc(c.referencias) + '</textarea>' +
         '<label class="etiqueta" for="observaciones">Observaciones</label>' +
@@ -171,8 +172,13 @@
           document.getElementById('tienda').focus();
           return;
         }
+        if (v('correo') && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v('correo'))) {
+          msg.textContent = 'El correo no parece válido. Ejemplo: nombre@correo.com (o déjalo vacío).'; msg.hidden = false;
+          document.getElementById('correo').focus();
+          return;
+        }
         c.tienda = v('tienda'); c.municipio = v('municipio'); c.vereda = v('vereda'); c.sector = v('sector');
-        c.contacto = v('contacto'); c.telefono = v('telefono');
+        c.contacto = v('contacto'); c.telefono = v('telefono'); c.correo = v('correo');
         c.referencias = v('referencias'); c.observaciones = v('observaciones');
         var boton = document.getElementById('guardar');
         boton.disabled = true;
@@ -209,15 +215,16 @@
           '<p class="nota">Los mapas necesitan internet para mostrarse.</p>'
         : '<p class="nota">Este cliente no tiene ubicación GPS. Edítalo para guardarla.</p>';
       var tel = c.telefono ? '<a class="boton secundario" href="tel:' + esc(c.telefono.replace(/[^\d+]/g, '')) + '">Llamar ' + esc(c.telefono) + '</a>' : '';
+      var mail = c.correo ? '<a class="boton secundario" href="mailto:' + esc(c.correo) + '">Escribir a ' + esc(c.correo) + '</a>' : '';
       ctx.contenedor.innerHTML =
         '<h2 class="nombre-tienda">' + esc(c.tienda) + '</h2>' +
         '<div class="panel">' +
         fila('Municipio', c.municipio) + fila('Vereda', c.vereda) + fila('Sector', c.sector) +
-        fila('Contacto', c.contacto) + fila('Teléfono', c.telefono) +
+        fila('Contacto', c.contacto) + fila('Teléfono', c.telefono) + fila('Correo', c.correo) +
         fila('Cómo llegar', c.referencias) + fila('Observaciones', c.observaciones) +
         fila('Última visita', c.ultimaVisita ? estados[c.ultimaVisita.estado] + ' · ' + Gps.fechaCorta(c.ultimaVisita.fecha) : null) +
         fila('Coordenadas GPS', Gps.tiene(c) ? Gps.coordenadas(c) + '\nPrecisión ±' + c.precision + ' m · ' + Gps.fechaCorta(c.fechaGps) : null) +
-        '</div>' + ruta + mapas + tel +
+        '</div>' + ruta + mapas + tel + mail +
         '<a class="boton grande" href="#/clientes/' + c.id + '/editar">Editar</a>' +
         '<button class="boton peligro" type="button" id="eliminar">Eliminar cliente</button>';
       var bRuta = document.getElementById('a-ruta');
